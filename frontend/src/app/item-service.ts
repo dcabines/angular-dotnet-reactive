@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Item } from './item';
 import { Observable, Subject } from 'rxjs';
-import { filter, map, scan, startWith, switchMap, shareReplay } from 'rxjs/operators';
+import { filter, map, scan, startWith, switchMap, shareReplay, withLatestFrom } from 'rxjs/operators';
 
 interface Action {
   type: string;
@@ -31,16 +31,21 @@ const baseUrl = 'http://localhost:5011/items';
 
 @Injectable({ providedIn: 'root' })
 export class ItemService {
-  // Selectors
-  public state$: Observable<ItemServiceState>;
-  public items$: Observable<Item[]>;
-  public isLoading$: Observable<boolean>;
-
   // Infrastructure
   private actions$: Subject<Action> = new Subject();
   private stateUpdater$: Subject<Partial<ItemServiceState>> = new Subject();
   private effects$: Observable<Action>[];
   private reducers$: Observable<Partial<ItemServiceState>>[];
+
+  // Selectors
+  public state$: Observable<ItemServiceState> = this.stateUpdater$.pipe(
+    startWith(initialState),
+    scan((state, newState) => ({ ...state, ...newState })),
+    map((state) => state as ItemServiceState)
+  );
+
+  public items$: Observable<Item[]>;
+  public isLoading$: Observable<boolean>;
 
   // Effects
   private getAllItemsE$ = this.actions$.pipe(
@@ -74,23 +79,21 @@ export class ItemService {
     map(({ items }) => ({ isLoading: false, items }))
   );
 
-  // private deleteItemSuccessR$ = this.actions$.pipe(
-  //   filter((action) => action.type === 'deleteItemSuccess'),
-  //   map(({ item }) => ({ items }))
-  // );
+  private deleteItemSuccessR$ = this.actions$.pipe(
+    filter((action) => action.type === 'deleteItemSuccess'),
+    withLatestFrom(
+      this.state$.pipe(map(state => state.items)),
+      ({ item }, items) => items.filter(x => x.id !== item?.id)
+    ),
+    map(items => ({ items }))
+  );
 
   constructor(private http: HttpClient) {
-    this.state$ = this.stateUpdater$.pipe(
-      startWith(initialState),
-      scan((state, newState) => ({ ...state, ...newState })),
-      map((state) => state as ItemServiceState)
-    );
-
     this.items$ = this.state$.pipe(map(state => state.items), shareReplay(1));
     this.isLoading$ = this.state$.pipe(map(state => state.isLoading), shareReplay(1));
 
     this.effects$ = [this.getAllItemsE$, this.deleteItemE$];
-    this.reducers$ = [this.getAllItemsR$, this.getAllItemsSuccessR$];
+    this.reducers$ = [this.getAllItemsR$, this.getAllItemsSuccessR$, this.deleteItemSuccessR$];
   }
 
   init() {
