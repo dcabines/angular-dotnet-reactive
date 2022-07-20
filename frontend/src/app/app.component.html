@@ -1,0 +1,12 @@
+<div>
+  <button type="button" (click)="onReloadClick()">Reload</button>
+  <span *ngIf="isLoading$ | async">Loading...</span>
+</div>
+
+<ng-container *ngIf="hasItems$ | async">
+  <span>Items: {{ itemCount$ | async }}</span>
+
+  <ul>
+    <li *ngFor="let item of items$ | async" (click)="onItemClick(item)">{{ item.name }}</li>
+  </ul>
+</ng-container>
