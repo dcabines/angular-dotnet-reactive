@@ -10,18 +10,18 @@ import * as actions from './actions';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
   isLoading$ = isLoading$;
   items$ = items$;
 
-  itemCount$: Observable<number> =items$.pipe(
-    map(items => items.length)
+  itemCount$: Observable<number> = items$.pipe(
+    map((items) => items.length)
   );
 
-  hasItems$: Observable<boolean>= this.itemCount$.pipe(
-    map(itemCount => itemCount > 0)
+  hasItems$: Observable<boolean> = this.itemCount$.pipe(
+    map((itemCount) => itemCount > 0)
   );
 
   constructor() {
