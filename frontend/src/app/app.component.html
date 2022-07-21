@@ -1,12 +1,14 @@
 <div>
   <button type="button" (click)="onReloadClick()">Reload</button>
+  <button type="button" (click)="onAddClick()">Add</button>
   <span *ngIf="isLoading$ | async">Loading...</span>
 </div>
 
 <ng-container *ngIf="hasItems$ | async">
   <span>Items: {{ itemCount$ | async }}</span>
 
-  <ul>
-    <li *ngFor="let item of items$ | async" (click)="onItemClick(item)">{{ item.name }}</li>
-  </ul>
+  <div class="item" *ngFor="let item of items$ | async">
+    <input #nameEditor [value]="item.name" (keydown.enter)="onUpdateItem(item, nameEditor.value)" (blur)="onUpdateItem(item, nameEditor.value)" />
+    <button type="button" (click)="onItemClick(item)">delete</button>
+  </div>
 </ng-container>

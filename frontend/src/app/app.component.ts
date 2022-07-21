@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { actions$ } from './actions';
 import { Item } from './item';
-import { ItemService } from './item-service';
+import { isLoading$, items$ } from './state';
+import * as actions from './actions';
 
 @Component({
   selector: 'app-root',
@@ -11,32 +13,34 @@ import { ItemService } from './item-service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent {
-  isLoading$: Observable<boolean>;
-  items$: Observable<Item[]>;
+  isLoading$ = isLoading$;
+  items$ = items$;
 
-  hasItems$: Observable<boolean>;
-  itemCount$: Observable<number>;
+  itemCount$: Observable<number> =items$.pipe(
+    map(items => items.length)
+  );
 
-  constructor(private service: ItemService) {
-    this.isLoading$ = service.isLoading$;
-    this.items$ = service.items$;
+  hasItems$: Observable<boolean>= this.itemCount$.pipe(
+    map(itemCount => itemCount > 0)
+  );
 
-    this.itemCount$ = service.items$.pipe(
-      map(items => items.length)
-    );
-
-    this.hasItems$ = this.itemCount$.pipe(
-      map(itemCount => itemCount > 0)
-    );
-
-    this.service.getAllItems();
+  constructor() {
+    actions$.next(actions.getAllItems());
   }
 
   onReloadClick() {
-    this.service.getAllItems();
+    actions$.next(actions.getAllItems());
+  }
+
+  onAddClick() {
+    actions$.next(actions.addItem({ id: 0, name: 'New Item' }));
   }
 
   onItemClick(item: Item) {
-    this.service.getAllItems();
+    actions$.next(actions.deleteItem(item));
+  }
+
+  onUpdateItem(item: Item, name: string) {
+    actions$.next(actions.updateItem({ ...item, name }));
   }
 }

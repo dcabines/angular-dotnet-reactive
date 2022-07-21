@@ -22,7 +22,7 @@ app.MapPost("/items", (Item request) =>
 {
   var newItem = new Item
   {
-    Id = items.Max(x => x.Id) + 1,
+    Id = items.Max(x => x.Id ?? 0) + 1,
     Name = request.Name
   };
 
